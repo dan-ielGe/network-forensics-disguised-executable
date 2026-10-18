@@ -50,7 +50,8 @@ I compared SHA-256 hashes of the original capture and working copy. Matching val
 
 The capture contains **74,404 packets** and spans approximately **2 hours, 42 minutes, 55 seconds** on **29 January 2020**. Some screenshots show local or relative time. UTC values and relative differences are identified explicitly below.
 
-![Original and working capture SHA-256 values](screenshots/01-capture-hashes.png)
+![Original and working capture SHA-256 values]<img width="1513" height="145" alt="01-capture-hashes" src="https://github.com/user-attachments/assets/6428bc39-b50e-4685-bca1-e83c0c3ecc0d" />
+
 *Figure 1. Matching hashes for the original and working capture.*
 
 ![Capture properties](screenshots/02-capture-properties.png)
