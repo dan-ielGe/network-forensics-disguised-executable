@@ -50,11 +50,12 @@ I compared SHA-256 hashes of the original capture and working copy. Matching val
 
 The capture contains **74,404 packets** and spans approximately **2 hours, 42 minutes, 55 seconds** on **29 January 2020**. Some screenshots show local or relative time. UTC values and relative differences are identified explicitly below.
 
-![Original and working capture SHA-256 values]<img width="1513" height="145" alt="01-capture-hashes" src="https://github.com/user-attachments/assets/6428bc39-b50e-4685-bca1-e83c0c3ecc0d" />
+<img width="1513" height="145" alt="01-capture-hashes" src="https://github.com/user-attachments/assets/6428bc39-b50e-4685-bca1-e83c0c3ecc0d" />
 
 *Figure 1. Matching hashes for the original and working capture.*
 
-![Capture properties](screenshots/02-capture-properties.png)
+<img width="1655" height="1247" alt="02-capture-properties" src="https://github.com/user-attachments/assets/455c0537-87a7-4b22-8858-a98ace5d667b" />
+
 *Figure 2. Packet count, capture duration, and capture metadata.*
 
 ## 2. Locate possible image transfers
@@ -65,7 +66,8 @@ I started with HTTP requests:
 http.request
 ```
 
-![HTTP traffic overview](screenshots/03-http-overview.png)
+<img width="2458" height="747" alt="03-http-overview" src="https://github.com/user-attachments/assets/7c7cd6ec-fc49-429e-b74f-eb36c904c63d" />
+
 *Figure 3. Initial HTTP request review before narrowing the search.*
 
 I then searched common image extensions:
@@ -82,7 +84,8 @@ http.request && (
 )
 ```
 
-![Image request results](screenshots/04-image-requests.png)
+<img width="2558" height="376" alt="04-image-requests" src="https://github.com/user-attachments/assets/1e51a8b5-51cd-4d8f-b04d-454dc46b550e" />
+
 *Figure 4. One request for `444444.png` and two requests for `/favicon.ico`.*
 
 This was a candidate-discovery filter. Extensions can be misleading, extensionless objects can be missed, and encrypted transfers are outside this filter's visibility.
@@ -107,12 +110,14 @@ http.request.uri contains "444444.png"
 | Content-Type | `image/png` |
 | Content-Length | `475136` |
 
-![Candidate HTTP request](screenshots/05-candidate-request.png)
+<img width="2161" height="836" alt="05-candidate-request" src="https://github.com/user-attachments/assets/edd253a2-9c9b-4d46-9c01-bf54474f0299" />
+
 *Figure 5. Request details associated with the apparent PNG download.*
 
 I used **Follow TCP Stream** to correlate the request and response within the same connection.
 
-![HTTP request and response headers](screenshots/06-http-stream.png)
+<img width="1323" height="623" alt="06-http-stream" src="https://github.com/user-attachments/assets/4328568a-ccf0-42e2-8765-5db2e34923cb" />
+
 *Figure 6. The server presented the object as a PNG image.*
 
 The Host header establishes what hostname the client requested. It does not establish the operator's identity. The unusual User-Agent was a supporting observation, not proof of malware.
@@ -131,7 +136,8 @@ The response body instead started with:
 4D 5A 90 00
 ```
 
-![Executable signature after HTTP image headers](screenshots/07-file-signature.png)
+<img width="1309" height="1132" alt="07-file-signature" src="https://github.com/user-attachments/assets/3d43013d-5404-4e0e-87dc-491be3d4da0c" />
+
 *Figure 7. `MZ` appears at the start of the response body despite the PNG metadata.*
 
 The mismatch justified extracting the object for further examination. `MZ` alone is insufficient to establish a complete PE structure; the content-based file identification below provided additional support.
@@ -140,7 +146,8 @@ The mismatch justified extracting the object for further examination. `MZ` alone
 
 I used **File → Export Objects → HTTP** to recover the candidate object. The export list associated it with `alphaenergyeng.com` and displayed an approximate size of **475 kB**.
 
-![HTTP object export](screenshots/08-http-object-export.png)
+<img width="1310" height="374" alt="08-http-object-export" src="https://github.com/user-attachments/assets/185df6c4-7b15-4899-b69f-0725d0e1a38f" />
+
 *Figure 8. The candidate object selected for export.*
 
 Static checks used the following commands:
@@ -152,7 +159,8 @@ xxd -l 64 444444.png
 sha256sum 444444.png
 ```
 
-![File identification and hash](screenshots/09-static-file-checks.png)
+<img width="1151" height="542" alt="09-static-file-checks" src="https://github.com/user-attachments/assets/99439ef7-c2b2-44dc-9d6c-6fc2e97c9842" />
+
 *Figure 9. `file` identifies a PE32 Windows executable; the hex dump shows `MZ`, and the final successful command records SHA-256.*
 
 The screenshot also retains an initial mistyped hash command and its error. The subsequent successful command supplies the recorded hash.
@@ -167,7 +175,8 @@ I reviewed decoded TLS traffic and TCP conversation statistics:
 tls
 ```
 
-![TLS conversation overview](screenshots/10-tls-conversations.png)
+<img width="1977" height="920" alt="10-tls-conversations" src="https://github.com/user-attachments/assets/10c81a8f-8d4b-4fbe-b9b8-d0a054c2e8c6" />
+
 *Figure 10. TCP conversation statistics used to review encrypted connections.*
 
 I then examined traffic to one endpoint and selected a connection:
@@ -180,7 +189,8 @@ ip.addr == 68.1.115.106 && tls
 ip.addr == 68.1.115.106 && tcp.port == 49697
 ```
 
-![Selected TLS connection](screenshots/11-selected-tls-connection.png)
+<img width="2462" height="796" alt="11-selected-tls-connection" src="https://github.com/user-attachments/assets/e66c0e94-0744-4fa3-a940-11a0b6fec331" />
+
 *Figure 11. TLS connection between `10.1.29.101:49697` and `68.1.115.106:443`.*
 
 ### Client Hello and SNI
@@ -190,7 +200,8 @@ ip.addr == 68.1.115.106 && tcp.port == 49697 &&
 tls.handshake.type == 1
 ```
 
-![Client Hello extensions without SNI](screenshots/12-client-hello-no-sni.png)
+<img width="1513" height="1009" alt="12-client-hello-no-sni" src="https://github.com/user-attachments/assets/1d7382af-320b-47ac-a422-224f68d9b306" />
+
 *Figure 12. The selected Client Hello contains no `server_name` extension.*
 
 No hostname was supplied through SNI in this handshake. This absence does not independently establish malicious activity.
@@ -201,7 +212,8 @@ No hostname was supplied through SNI in this handshake. This absence does not in
 dns.a == 68.1.115.106
 ```
 
-![DNS search with no matching answers](screenshots/13-dns-search.png)
+<img width="1354" height="406" alt="13-dns-search" src="https://github.com/user-attachments/assets/fbda5398-5961-475d-91f6-870fd3c3c020" />
+
 *Figure 13. No packets matched the DNS A-record answer filter.*
 
 No DNS A-record answer linking a hostname to this IP was found using this filter. Cached resolution, activity outside the capture, or other resolution methods remain possible. The certificate name discussed next was not obtained from DNS or SNI.
@@ -213,16 +225,20 @@ ip.addr == 68.1.115.106 && tcp.port == 49697 &&
 tls.handshake.type == 11
 ```
 
-![TLS certificate in frame 3174](screenshots/14-certificate-overview.png)
+<img width="1048" height="1288" alt="14-certificate-overview" src="https://github.com/user-attachments/assets/96d7a032-4747-48ac-b828-a1cfba679893" />
+
 *Figure 14. Certificate message presented by the selected TLS server.*
 
-![Expanded certificate issuer](screenshots/15-certificate-issuer.png)
+<img width="1373" height="1365" alt="15-certificate-issuer" src="https://github.com/user-attachments/assets/1fa18ab8-2cae-4c39-8a2b-7de7984a72d6" />
+
 *Figure 15. Issuer fields, including Common Name `gaevietovp.mobi`.*
 
-![Expanded certificate subject](screenshots/18-certificate-subject.png)
+<img width="1599" height="306" alt="16-certificate-validity" src="https://github.com/user-attachments/assets/5ce168e0-c7be-4a47-9e98-f18087f91178" />
+
 *Figure 16. Subject fields, including Common Name `gaevietovp.mobi`.*
 
-![Certificate validity dates](screenshots/16-certificate-validity.png)
+<img width="2173" height="656" alt="17-event-correlation" src="https://github.com/user-attachments/assets/5816c718-9b7f-430a-82e3-6136271196c3" />
+
 *Figure 17. Certificate validity dates shown in UTC.*
 
 | Certificate field | Observation |
@@ -252,7 +268,8 @@ frame.number == 3174
 | `3173` | `513.871330 s` | Client sends the selected TLS Client Hello |
 | `3174` | `513.986818 s` | Server sends its handshake, including the certificate |
 
-![Selected HTTP and TLS events](screenshots/17-event-correlation.png)
+<img width="1942" height="213" alt="18-certificate-subject" src="https://github.com/user-attachments/assets/606c18f9-8ab3-4ef8-92fd-798dcc40a9c9" />
+
 *Figure 18. Selected event packets. The screenshot's display order differs from chronological order; the table above orders the events by frame and time.*
 
 The selected Client Hello occurred approximately **406 seconds** after the file request. The same client and event order make the connection relevant for investigation. They do not prove that the executable initiated it.
